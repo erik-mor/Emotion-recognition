@@ -1,3 +1,15 @@
+# npy files
+*.npy
+
+# tensorboard
+/logs
+
+# keras tuner
+/tuner-res
+
+# performance file
+./models performance
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -50,6 +62,9 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+
+# pycharm
+.idea
 
 # Translations
 *.mo
