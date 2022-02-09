@@ -5,6 +5,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from keras.utils import np_utils
 from sklearn.metrics import classification_report
+import seaborn as sn
+from sklearn.metrics import classification_report, confusion_matrix, plot_confusion_matrix, accuracy_score
 
 # string = """
 #            0       0.55      0.64      0.59       467
@@ -83,7 +85,6 @@ ax.bar_label(rects2, padding=3)
 fig.tight_layout()
 plt.show()
 
-#
 # data_path = "../../CK/CK+48/"
 # data_dir_list = os.listdir(data_path)
 
@@ -110,7 +111,6 @@ plt.show()
 #     plt.show()
 
 # images = [cv2.imread(data_path + '/' + data + '/' + os.listdir(data_path + '/' + data)[0]) for index, data in enumerate(sorted(data_dir_list))]
-
 
 # centers_px = np.load("../clusters/cluster_center_px-diff.npz")
 # centers_hist = np.load("../clusters/cluster_center.npz")
@@ -141,51 +141,35 @@ plt.show()
 # plt.show()
 
 
-# def plot_cm(y_true, y_pred, figsize=(10, 10)):
-#     # cm = confusion_matrix(y_true, y_pred, labels=np.unique(y_true))
-#     cm = np.zeros((7, 7), dtype=int)
-#     for true, pred in zip(y_true, y_pred):
-#         cm[true][pred] = cm[true][pred] + 1
-#
-#     print(cm)
-#     cm = cm.astype(float)
-#     cm_sum = np.sum(cm, axis=1, keepdims=True)
-#     cm_perc = cm / cm_sum.astype(float) * 100
-#     annot = np.empty_like(cm).astype(str)
-#     nrows, ncols = cm.shape
-#     for i in range(nrows):
-#         for j in range(ncols):
-#             c = cm[i, j]
-#             p = cm_perc[i, j]
-#             if i == j:
-#                 s = cm_sum[i]
-#                 annot[i, j] = '%.1f%%\n%d/%d' % (p, c, s)
-#             elif c == 0:
-#                 annot[i, j] = ''
-#             else:
-#                 annot[i, j] = '%.1f%%\n%d' % (p, c)
-#             cm[i, j] = p
-#
-#     # cm = cm[:-1]
-#     # annot = annot[:-1]
-#     cm = pd.DataFrame(cm, index=np.unique(y_pred), columns=np.unique(y_pred))
-#     cm.index.name = 'Actual'
-#     cm.columns.name = 'Predicted'
-#     fig, ax = pyplot.subplots(figsize=figsize)
-#     sn.heatmap(cm, cmap="YlGnBu", annot=annot, fmt='', ax=ax, vmax=100, vmin=0)
-#
-#
-# ck_data = np.load("../image_sets/data/data_ck.npy")
-# ck_labels = np.load("../image_sets/labels/labels_ck.npy")
-#
-# print(ck_data.shape)
-# print(ck_labels.shape)
-# Y_test = np.argmax(ck_labels, axis=1)
-# # y_pred = model.predict(ck_data)
-# # Y_pred = np.argmax(y_pred, axis=1)
-# Y_pred = np.load("Y_pred.npy")
-#
-# plot_cm(Y_test, Y_pred)
-# pyplot.show()
-# print(classification_report(Y_test, Y_pred))
-#
+def plot_cm(y_true, y_pred, figsize=(10, 10)):
+    cm = confusion_matrix(y_true, y_pred, labels=np.unique(y_true))
+    print(cm)
+    # cm = np.zeros((6, 7), dtype=float)
+    # for true, pred in zip(y_true, y_pred):
+    #     cm[true][pred] = cm[true][pred] + 1
+
+    cm_sum = np.sum(cm, axis=1, keepdims=True)
+    cm_perc = cm / cm_sum.astype(float) * 100
+    annot = np.empty_like(cm).astype(str)
+    nrows, ncols = cm.shape
+    for i in range(nrows):
+        for j in range(ncols):
+            c = cm[i, j]
+            p = cm_perc[i, j]
+            if i == j:
+                s = cm_sum[i]
+                annot[i, j] = '%.1f%%\n%d/%d' % (p, c, s)
+            elif c == 0:
+                annot[i, j] = ''
+            else:
+                annot[i, j] = '%.1f%%\n%d' % (p, c)
+            cm[i, j] = p
+
+    sn.set(font_scale=1.4)
+    cm = pd.DataFrame(cm, index=np.unique(y_true), columns=np.unique(y_pred))
+    cm.index.name = 'Actual'
+    cm.columns.name = 'Predicted'
+    fig, ax = plt.subplots(figsize=figsize)
+    sn.heatmap(cm, cmap="YlGnBu", annot=annot, fmt='', ax=ax, vmax=100, vmin=0)
+
+

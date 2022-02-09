@@ -9,7 +9,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 import seaborn as sn
 
 # TODO - pip install imbalanced-learn
-from imblearn.over_sampling import SMOTE
+# from imblearn.over_sampling import SMOTE
 
 IMG_WIDTH = 48
 IMG_HEIGHT = 48
@@ -159,14 +159,6 @@ print(data["emotion"].value_counts())
 #     testing_data_sampled = pd.concat([testing_data_sampled, testing_data[testing_data["emotion"] == int(key)].sample(int(sample), replace=True)])
 #
 # print(testing_data_sampled["emotion"].value_counts())
-######     SMOTE      ##############
-# x = training_data.drop(["Usage", "emotion"], 1)
-# y = training_data.drop(["Usage", "pixels"], 1)
-# print(y.value_counts())
-# print(x.head())
-# smote = SMOTE(sampling_strategy="minority")
-# x_sm, y_sm = smote.fit_sample(x, y)
-# print(y_sm.value_counts())
 
 print("Data sampled successfully.")
 
@@ -388,33 +380,6 @@ def get_centers(find_faces=True):
 # #################################################################
 # #####                  CKPLUS DATASET                      ######
 # ################################################################
-def plot_cm(y_true, y_pred, figsize=(10, 10)):
-    cm = confusion_matrix(y_true, y_pred, labels=np.unique(y_true))
-    print(cm)
-    cm_sum = np.sum(cm, axis=1, keepdims=True)
-    cm_perc = cm / cm_sum.astype(float) * 100
-    annot = np.empty_like(cm).astype(str)
-    nrows, ncols = cm.shape
-    for i in range(nrows):
-        for j in range(ncols):
-            c = cm[i, j]
-            p = cm_perc[i, j]
-            if i == j:
-                s = cm_sum[i]
-                annot[i, j] = '%.1f%%\n%d/%d' % (p, c, s)
-            elif c == 0:
-                annot[i, j] = ''
-            else:
-                annot[i, j] = '%.1f%%\n%d' % (p, c)
-            cm[i, j] = p
-
-    cm = pd.DataFrame(cm, index=classes_ck, columns=classes_fer)
-    cm.index.name = 'Actual'
-    cm.columns.name = 'Predicted'
-    fig, ax = plt.subplots(figsize=figsize)
-    sn.heatmap(cm, cmap="YlGnBu", annot=annot, fmt='', ax=ax, vmax=100, vmin=0)
-
-
 def calc_label_diff(image, centers, faces, find_faces=True):
     i = np.copy(image)
     if find_faces:
@@ -482,13 +447,6 @@ def process_ck(find_faces=True):
     # labels_diff = np.array(labels_diff)
     # labels_hist = np.array(labels_hist)
 
-    # plot_cm(labels, labels_diff)
-    # print(classification_report(labels, labels_diff))
-    # plt.show()
-    # plot_cm(labels, labels_hist)
-    # print(classification_report(labels, labels_hist))
-    # plt.show()
-
     img_data = np.array(img_data_list)
     img_data = img_data.astype('float32') / 255
     print(img_data.shape)
@@ -500,6 +458,7 @@ def process_ck(find_faces=True):
 
 # find_centers(False)
 process_ck(False)
+
 # #################################################################
 # #####                  GENERATE DATA                      ######
 # ################################################################

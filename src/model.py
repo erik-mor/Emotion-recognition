@@ -17,6 +17,7 @@ import time
 from sklearn.metrics import classification_report, confusion_matrix, plot_confusion_matrix, accuracy_score
 from matplotlib import pyplot
 from sklearn.model_selection import train_test_split, KFold, cross_val_score
+from helper import plot_cm
 
 # GPU Config
 # config_cpu = tf.compat.v1.ConfigProto(
@@ -26,11 +27,7 @@ from sklearn.model_selection import train_test_split, KFold, cross_val_score
 config = tf.compat.v1.ConfigProto()
 config.gpu_options.allow_growth = True
 session = tf.compat.v1.InteractiveSession(config=config)
-
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-
-nn = "all"
-NAME = f"{nn}-old-no_reg-aug-2conv-{int(time.time())}"
 
 # callbacks_logger = tf.keras.callbacks.CSVLogger(f"training_logs/{NAME}", append=True)
 callback_reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.5, patience=4, min_lr=1e-7,
@@ -52,6 +49,9 @@ def step_decay(epoch):
 
 callback_schedule_lr = tf.keras.callbacks.LearningRateScheduler(step_decay)
 
+NAME = f"all-old-no_reg-aug-2conv-{int(time.time())}"
+tensorboard = TensorBoard(log_dir=f"../logs/{NAME}")
+
 batch_size = 32
 img_height = 48
 img_width = 48
@@ -60,7 +60,6 @@ selected_class = 2
 selection_1 = [0, 4, 6]
 selection_2 = [1, 3, 5]
 
-tensorboard = TensorBoard(log_dir=f"../logs/{NAME}")
 #################################################################
 #####                    LOAD DATA                        ######
 ################################################################
@@ -80,8 +79,6 @@ test_labels = np.load(f"../image_sets/labels/labels_test.npy")
 
 ck_data = np.load("../image_sets/data/data_ck.npy")
 ck_labels = np.load("../image_sets/labels/labels_ck.npy")
-
-print(ck_data.shape)
 
 #################################################################
 #####                DATA AUGMENTATION                    ######
@@ -224,20 +221,12 @@ print(ck_data.shape)
 #
 # model.save("model_" + NAME)
 #
-# #
-# sns.set()
-# fig = pyplot.figure()
-# sns.lineplot(hist.epoch, hist.history['accuracy'], label='training')
-# sns.lineplot(hist.epoch, hist.history['val_accuracy'], label='validation')
-# pyplot.xlabel("Epoch")
-# pyplot.ylabel("Accuracy")
 #
-# pyplot.savefig(NAME)
-# pyplot.show()
-
-
-# print(test_labels[2])
 #
+#################################################################
+#####               DT SETUP AND TESTING                  ######
+################################################################
+
 alpha = tf.keras.models.load_model("../saved_models/model_alpha--1614719512")
 beta = tf.keras.models.load_model("../saved_models/model_beta--1614582905")
 gama1 = tf.keras.models.load_model("../saved_models/model_gama_1--1614837580")
@@ -245,7 +234,6 @@ gama2 = tf.keras.models.load_model("../saved_models/model_gama_2--1614875102")
 
 model = tf.keras.models.load_model("../saved_models/model_all--1613902058")
 
-########### DT testing ################
 # labels = ck_labels.copy()
 # data = ck_data.copy()
 # Y_pred = []
@@ -276,75 +264,15 @@ model = tf.keras.models.load_model("../saved_models/model_all--1613902058")
 #
 #     Y_pred.append(prediction)
 
-
-def plot_cm(y_true, y_pred, figsize=(10, 10)):
-    cm = confusion_matrix(y_true, y_pred, labels=np.unique(y_true))
-    print(cm)
-    # cm = np.zeros((6, 7), dtype=float)
-    # for true, pred in zip(y_true, y_pred):
-    #     cm[true][pred] = cm[true][pred] + 1
-
-    cm_sum = np.sum(cm, axis=1, keepdims=True)
-    cm_perc = cm / cm_sum.astype(float) * 100
-    annot = np.empty_like(cm).astype(str)
-    nrows, ncols = cm.shape
-    for i in range(nrows):
-        for j in range(ncols):
-            c = cm[i, j]
-            p = cm_perc[i, j]
-            if i == j:
-                s = cm_sum[i]
-                annot[i, j] = '%.1f%%\n%d/%d' % (p, c, s)
-            elif c == 0:
-                annot[i, j] = ''
-            else:
-                annot[i, j] = '%.1f%%\n%d' % (p, c)
-            cm[i, j] = p
-
-    sn.set(font_scale=1.4)
-    cm = pd.DataFrame(cm, index=np.unique(y_true), columns=np.unique(y_pred))
-    cm.index.name = 'Actual'
-    cm.columns.name = 'Predicted'
-    fig, ax = pyplot.subplots(figsize=figsize)
-    sn.heatmap(cm, cmap="YlGnBu", annot=annot, fmt='', ax=ax, vmax=100, vmin=0)
-
-
-# Y_test = np.argmax(test_labels, axis=1)
-# y_pred = model.predict(test_data)
-# Y_pred = np.argmax(y_pred, axis=1)
-# #
-# plot_cm(Y_test, Y_pred)
-# pyplot.show()
-# print(classification_report(Y_test, Y_pred))
-
-# print("Original labels")
-# print(ck_data.shape)
-# print(ck_labels.shape)
 Y_test = np.argmax(test_labels, axis=1)
 y_pred = model.predict(test_data)
 Y_pred = np.argmax(y_pred, axis=1)
 # np.save("Y_pred", Y_pred)
 #
+
 plot_cm(Y_test, Y_pred)
 pyplot.show()
 # print(classification_report(Y_test, Y_pred))
-
-
-# path = "../clusters/labels/"
-# labels_dir = os.listdir(path)
-#
-# for labels in labels_dir:
-#     print(labels)
-#
-#     labels = np.load(path + labels)
-#     print(labels)
-#     Y_test = np.argmax(labels, axis=1)
-#     y_pred = model.predict(ck_data)
-#     Y_pred = np.argmax(y_pred, axis=1)
-#
-#     plot_cm(Y_test, Y_pred)
-#     pyplot.show()
-#     print(classification_report(Y_test, Y_pred))
 
 #################################################################
 #####                TRANSFER LEARNING                    ######
@@ -361,10 +289,10 @@ pyplot.show()
 # model.trainable = False
 # finetune_model = tf.keras.models.Sequential([
 #     model,
-    # tf.keras.layers.Dense(units=128, activation='relu', name="new_dense"),
-    # tf.keras.layers.BatchNormalization(name="new_batch"),
-    # layers.Dropout(0.3, name="new_dropout"),
-    # tf.keras.layers.Dense(units=6, activation='softmax', name="new_output")
+# tf.keras.layers.Dense(units=128, activation='relu', name="new_dense"),
+# tf.keras.layers.BatchNormalization(name="new_batch"),
+# layers.Dropout(0.3, name="new_dropout"),
+# tf.keras.layers.Dense(units=6, activation='softmax', name="new_output")
 # ])
 # finetune_model.build(input_shape=(None, 48, 48, 1))
 #
@@ -375,18 +303,6 @@ pyplot.show()
 # model.pop()
 # model.trainable = False
 # new_layer = tf.keras.layers.Dense(units=7, activation='softmax', name="new_output")
-
-# x = layers.Conv2D(256, (3, 3), padding='same', activation='relu', name="conv_last_0_0")(model.layers[-1].output)
-# x = tf.keras.layers.BatchNormalization(name=f"bn_conv_0_0")(x)
-# for i in range(2):
-#     for j in range(1):
-#         if i != 0 and j != 0:
-#             x = layers.Conv2D(256, (3, 3), padding='same', activation='relu', name=f"conv_last_{i}_{j}")(x)
-#             x = tf.keras.layers.BatchNormalization(name=f"bn_conv_{i}_{j}")(x)
-#
-#     x = layers.MaxPooling2D(name=f"pooling_conv_{i}")(x)
-#     x = layers.Dropout(0.3, name=f"dropout_conv{i}")(x)
-
 
 # x = layers.Flatten()(x)
 # x = tf.keras.layers.Dense(units=256, activation='relu', name="last_dense")(x)
@@ -468,7 +384,7 @@ pyplot.show()
 #     directory='tuner_res',
 #     project_name=NAME
 # )
-# # # # # # # #
+
 # tuner.search(datagen.flow(train_data, train_labels),
 #              validation_data=(validation_data, validation_labels),
 #              batch_size=32,
